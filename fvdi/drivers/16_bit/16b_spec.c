@@ -16,6 +16,7 @@
 #include "relocate.h"
 #include "../bitplane/bitplane.h"
 #include "string/memset.h"
+#include <osbind.h>
 
 static char const r_16[] = { 5, 11, 12, 13, 14, 15 };
 static char const g_16[] = { 6,  5,  6,  7,  8,  9, 10 };
@@ -435,7 +436,55 @@ long CDECL setup(long type, long value)
  */
 Virtual *CDECL opnwk(Virtual *vwk)
 {
+    unsigned long screen_address = 0xC00000;
+    Workstation *wk;
     (void) vwk;
+
+    vwk = me->default_vwk;  /* This is what we're interested in */
+    wk = vwk->real_address;
+    
+    PRINTF(("%d x %d x %d screen at 0x%lx\r\n", wk->screen.mfdb.width, wk->screen.mfdb.height,
+            wk->screen.mfdb.bitplanes, (long) wk->screen.mfdb.address));
+    
+    /*
+     * Some things need to be changed from the
+     * default workstation settings.
+     */
+    wk->screen.mfdb.address = (short *) screen_address;
+
+
+//    wk->screen.mfdb.wdwidth = (wk->screen.mfdb.width + 15) / 16;
+//    wk->screen.wrap = wk->screen.mfdb.width * (wk->screen.mfdb.bitplanes / 8);
+    wk->screen.mfdb.width = 320;
+    wk->screen.mfdb.height = 240;
+    wk->screen.wrap = 640;
+    wk->screen.mfdb.bitplanes = 16;
+
+    wk->screen.coordinates.max_x = wk->screen.mfdb.width - 1;
+    wk->screen.coordinates.max_y = wk->screen.mfdb.height - 1;
+
+    wk->screen.look_up_table = 0;           /* Was 1 (???)  Shouldn't be needed (graphics_mode) */
+    wk->screen.mfdb.standard = 0;
+#if 0
+    if (pixel.width > 0)            /* Starts out as screen width */
+        wk->screen.pixel.width = (pixel.width * 1000L) / wk->screen.mfdb.width;
+    else                                   /*   or fixed DPI (negative) */
+        wk->screen.pixel.width = 25400 / -pixel.width;
+
+    if (pixel.height > 0)       /* Starts out as screen height */
+        wk->screen.pixel.height = (pixel.height * 1000L) / wk->screen.mfdb.height;
+    else                                    /*   or fixed DPI (negative) */
+        wk->screen.pixel.height = 25400 / -pixel.height;
+
+    wk->mouse.position.x = ((wk->screen.coordinates.max_x - wk->screen.coordinates.min_x + 1) >> 1) + wk->screen.coordinates.min_x;
+    wk->mouse.position.y = ((wk->screen.coordinates.max_y - wk->screen.coordinates.min_y + 1) >> 1) + wk->screen.coordinates.min_y;
+    
+#endif
+    PRINTF(("%d x %d x %d screen at 0x%lx\r\n", wk->screen.mfdb.width, wk->screen.mfdb.height,
+            wk->screen.mfdb.bitplanes, (long) wk->screen.mfdb.address));
+
+    Cconin();
+
     return 0;
 }
 
