@@ -18,10 +18,10 @@
 
 #define NOVA 0		/* 1 - byte swap 16 bit colour value (NOVA etc) */
 
-#define red_bits   5	/* 5 for all normal 16 bit hardware */
-#define green_bits 6	/* 6 for Falcon TC and NOVA 16 bit, 5 for NOVA 15 bit */
+#define red_bits   3	/* 5 for all normal 16 bit hardware */
+#define green_bits 3	/* 6 for Falcon TC and NOVA 16 bit, 5 for NOVA 15 bit */
 /* (I think 15 bit Falcon TC disregards the green LSB) */
-#define blue_bits  5	/* 5 for all normal 16 bit hardware */
+#define blue_bits  2	/* 5 for all normal 16 bit hardware */
 
 
 long CDECL c_get_colour(Virtual *vwk, long colour)
@@ -51,7 +51,9 @@ long CDECL c_get_colour(Virtual *vwk, long colour)
     foreground = *realp;
     realp = (unsigned short *)&back_pal[colour >> 16].real;
     background = *realp;
-    return ((unsigned long)background << 16) | (unsigned long)foreground;
+    long out = ((unsigned long)background << 16) | (unsigned long)foreground;
+//    return ((unsigned long)background << 16) | (unsigned long)foreground;
+    return out;
 }
 
 

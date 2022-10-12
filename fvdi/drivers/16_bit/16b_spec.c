@@ -18,33 +18,32 @@
 #include "string/memset.h"
 #include <osbind.h>
 
+#if 0
 static char const r_16[] = { 5, 11, 12, 13, 14, 15 };
 static char const g_16[] = { 6,  5,  6,  7,  8,  9, 10 };
 static char const b_16[] = { 5,  0,  1,  2,  3,  4 };
 static char const none[] = { 0 };
-
-#if 0
-static char const red[] = { 5, 11, 12, 13, 14, 15 };
-static char const green[] = { 5, 6, 7, 8, 9, 10 };
-static char const blue[] = { 5, 0, 1, 2, 3, 4 };
-static char const alpha[] = { 0 };
-static char const genlock[] = { 0 };
-static char const unused[] = { 1, 5 };
 #endif
+static char const r_8[] = { 5, 6, 7 };
+static char const g_8[] = { 2,  3,  4 };
+static char const b_8[] = { 0,  1 };
+static char const none[] = { 0 };
+
 
 static Mode const mode[1] = {
-    { 16, CHUNKY | CHECK_PREVIOUS | TRUE_COLOUR, { r_16, g_16, b_16, none, none, none }, 0, 2, 2, 1 }
+    { 8, CHUNKY | CHECK_PREVIOUS | TRUE_COLOUR, { r_8, g_8, b_8, none, none, none }, 0, 2, 2, 1 }
 };
 
 char driver_name[] = "Falcon TC 2001-03-24 (shadow)";
 
 long CDECL (*write_pixel_r)(Virtual *vwk, MFDB *mfdb, long x, long y, long colour) = c_write_pixel;
 long CDECL (*read_pixel_r)(Virtual *vwk, MFDB *mfdb, long x, long y) = c_read_pixel;
-long CDECL (*line_draw_r)(Virtual *vwk, long x1, long y1, long x2, long y2, long pattern, long colour, long mode) = c_line_draw;
-long CDECL (*expand_area_r)(Virtual *vwk, MFDB *src, long src_x, long src_y, MFDB *dst, long dst_x, long dst_y, long w, long h, long operation, long colour) = c_expand_area;
-long CDECL (*fill_area_r)(Virtual *vwk, long x, long y, long w, long h, short *pattern, long colour, long mode, long interior_style) = c_fill_area;
+
+long CDECL (*line_draw_r)(Virtual *vwk, long x1, long y1, long x2, long y2, long pattern, long colour, long mode) = 0;//c_line_draw;
+long CDECL (*expand_area_r)(Virtual *vwk, MFDB *src, long src_x, long src_y, MFDB *dst, long dst_x, long dst_y, long w, long h, long operation, long colour) = 0;//c_expand_area;
+long CDECL (*fill_area_r)(Virtual *vwk, long x, long y, long w, long h, short *pattern, long colour, long mode, long interior_style) = 0;//c_fill_area;
 long CDECL (*fill_poly_r)(Virtual *vwk, short points[], long n, short index[], long moves, short *pattern, long colour, long mode, long interior_style) = 0;
-long CDECL (*blit_area_r)(Virtual *vwk, MFDB *src, long src_x, long src_y, MFDB *dst, long dst_x, long dst_y, long w, long h, long operation) = c_blit_area;
+long CDECL (*blit_area_r)(Virtual *vwk, MFDB *src, long src_x, long src_y, MFDB *dst, long dst_x, long dst_y, long w, long h, long operation) = 0;//c_blit_area;
 long CDECL (*text_area_r)(Virtual *vwk, short *text, long length, long dst_x, long dst_y, short *offsets) = 0;
 long CDECL (*mouse_draw_r)(Workstation *wk, long x, long y, Mouse *mouse) = c_mouse_draw;
 
@@ -455,10 +454,10 @@ Virtual *CDECL opnwk(Virtual *vwk)
 
 //    wk->screen.mfdb.wdwidth = (wk->screen.mfdb.width + 15) / 16;
 //    wk->screen.wrap = wk->screen.mfdb.width * (wk->screen.mfdb.bitplanes / 8);
-    wk->screen.mfdb.width = 320;
-    wk->screen.mfdb.height = 240;
+    wk->screen.mfdb.width = 640;
+    wk->screen.mfdb.height = 480;
     wk->screen.wrap = 640;
-    wk->screen.mfdb.bitplanes = 16;
+    wk->screen.mfdb.bitplanes = 8;
 
     wk->screen.coordinates.max_x = wk->screen.mfdb.width - 1;
     wk->screen.coordinates.max_y = wk->screen.mfdb.height - 1;
@@ -480,7 +479,7 @@ Virtual *CDECL opnwk(Virtual *vwk)
     wk->mouse.position.y = ((wk->screen.coordinates.max_y - wk->screen.coordinates.min_y + 1) >> 1) + wk->screen.coordinates.min_y;
     
 #endif
-    PRINTF(("%d x %d x %d screen at 0x%lx\r\n", wk->screen.mfdb.width, wk->screen.mfdb.height,
+    PRINTF(("%d x %d x %d screen at 0x%lx\r\n(Press return to continue)\r\n", wk->screen.mfdb.width, wk->screen.mfdb.height,
             wk->screen.mfdb.bitplanes, (long) wk->screen.mfdb.address));
 
     Cconin();
