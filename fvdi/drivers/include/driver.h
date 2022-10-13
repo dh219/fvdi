@@ -2,6 +2,7 @@
 #define DRIVER_H
 
 #include <stdarg.h>
+#include <stdint.h>
 
 /* 
  * fVDI driver declarations, by Johan Klockars.
@@ -30,6 +31,8 @@
 #define A_GET_PIX	(A_SET_PIX << 1)
 
 #define ACCEL_ALL	(A_TEXT|A_BLIT|A_FILL|A_FILLPOLY|A_EXPAND|A_LINE)		/* Only functions covered by this may be turned off */
+
+#define UNUSED(x) (void)(x)
 
 #ifdef FVDI_DEBUG
 #  define unreachable() kprintf("%s: \"unreachable\" in %s line %d\n", driver_name, __FILE__, __LINE__)

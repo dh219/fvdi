@@ -15,9 +15,10 @@
 #include "driver.h"
 #include "../bitplane/bitplane.h"
 
-#define PIXEL		short
+#define PIXEL		char
 #define PIXEL_SIZE	sizeof(PIXEL)
 
+#ifdef DAVID
 
 /*
  * Make it as easy as possible for the C compiler.
@@ -425,3 +426,5 @@ long CDECL c_expand_area(Virtual *vwk, MFDB *src, long src_x, long src_y, MFDB *
 #endif
     return 1;       /* Return as completed */
 }
+
+#endif

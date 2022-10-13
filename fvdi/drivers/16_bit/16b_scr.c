@@ -15,9 +15,8 @@
 #include "driver.h"
 #include "../bitplane/bitplane.h"
 #include "relocate.h"
-#include <stdio.h>
 
-#define PIXEL       short
+#define PIXEL       char
 #define PIXEL_SIZE  sizeof(PIXEL)
 
 /* destination MFDB (odd address marks table operation)
@@ -30,12 +29,10 @@ c_write_pixel(Virtual *vwk, MFDB *dst, long x, long y, long colour)
     Workstation *wk;
     long offset;
 
-   
     if ((long)vwk & 1)
         return 0;
-
+    
     wk = vwk->real_address;
-    #if 0
     if (!dst || !dst->address || (dst->address == wk->screen.mfdb.address)) {
         offset = wk->screen.wrap * y + x * PIXEL_SIZE;
 #ifdef BOTH
@@ -48,10 +45,6 @@ c_write_pixel(Virtual *vwk, MFDB *dst, long x, long y, long colour)
         offset = (dst->wdwidth * 2 * dst->bitplanes) * y + x * PIXEL_SIZE;
         *(PIXEL *)((long)dst->address + offset) = colour;
     }
-    #endif
-        offset = wk->screen.wrap * y + x;
-        *(unsigned char*)((long)wk->screen.mfdb.address + offset) = (unsigned char)colour;
-    //if( x == 0 ) PRINTF(( "%x\n", colour ));
     return 1;
 }
 
@@ -64,7 +57,6 @@ c_read_pixel(Virtual *vwk, MFDB *src, long x, long y)
     unsigned PIXEL colour;
 
     wk = vwk->real_address;
-    #if 0
     if (!src || !src->address || (src->address == wk->screen.mfdb.address)) {
         offset = wk->screen.wrap * y + x * PIXEL_SIZE;
 #ifdef BOTH
@@ -80,8 +72,5 @@ c_read_pixel(Virtual *vwk, MFDB *src, long x, long y)
         offset = (src->wdwidth * 2 * src->bitplanes) * y + x * PIXEL_SIZE;
         colour = *(unsigned PIXEL *)((long)src->address + offset);
     }
-    #endif
-        offset = wk->screen.wrap * y + x;
-        colour = *(unsigned char *)((long)wk->screen.mfdb.address + offset);
     return colour;
 }

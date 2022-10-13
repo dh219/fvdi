@@ -15,9 +15,11 @@
 #include "driver.h"
 #include "../bitplane/bitplane.h"
 
-#define PIXEL		short
+#define PIXEL		char
 #define PIXEL_SIZE	sizeof(PIXEL)
 #define PIXEL_32    long
+
+#ifdef DAVID
 
 /*
  * Make it as easy as possible for the C compiler.
@@ -839,3 +841,5 @@ long CDECL c_line_draw(Virtual *vwk, long x1, long y1, long x2, long y2,
     }
     return 1;       /* Return as completed */
 }
+
+#endif

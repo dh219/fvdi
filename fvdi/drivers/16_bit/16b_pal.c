@@ -51,9 +51,7 @@ long CDECL c_get_colour(Virtual *vwk, long colour)
     foreground = *realp;
     realp = (unsigned short *)&back_pal[colour >> 16].real;
     background = *realp;
-    long out = ((unsigned long)background << 16) | (unsigned long)foreground;
-//    return ((unsigned long)background << 16) | (unsigned long)foreground;
-    return out;
+    return ((unsigned long)background << 16) | (unsigned long)foreground;
 }
 
 

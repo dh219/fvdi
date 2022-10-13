@@ -15,9 +15,11 @@
 #include "driver.h"
 #include "../bitplane/bitplane.h"
 
-#define PIXEL		short
+#define PIXEL		char
 #define PIXEL_SIZE	sizeof(PIXEL)
 #define PIXEL_32    long
+
+#ifdef DAVID
 
 #ifdef FVDI_DEBUG
 static void debug_out(const char *text1, int w, int old_w, int h, int src_x, int src_y, int dst_x, int dst_y)
@@ -1240,3 +1242,4 @@ c_blit_area(Virtual *vwk, MFDB *src, long src_x, long src_y,
 
     return 1;   /* Return as completed */
 }
+#endif

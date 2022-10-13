@@ -14,12 +14,12 @@
 #include "driver.h"
 #include "../bitplane/bitplane.h"
 
-#define PIXEL       short
+#define PIXEL       char
 #define PIXEL_SIZE  sizeof(PIXEL)
 
 static unsigned long mouse_save_state = 0;
 static long mouse_old_colours = 0;
-static PIXEL mouse_foreground = 0xffff;
+static PIXEL mouse_foreground = 0xff;
 static PIXEL mouse_background = 0;
 
 static unsigned short mouse_data[16 * 2] = {
