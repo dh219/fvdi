@@ -15,11 +15,11 @@
 #include "driver.h"
 #include "../bitplane/bitplane.h"
 
-#define PIXEL		char
+#define PIXEL		unsigned char
 #define PIXEL_SIZE	sizeof(PIXEL)
 #define PIXEL_32    long
 
-#ifdef DAVID
+#ifndef DAVID
 
 /*
  * Make it as easy as possible for the C compiler.
@@ -711,6 +711,7 @@ static void line_revtransp_p(PIXEL *addr, PIXEL *addr_fast, long pattern, int co
 long CDECL c_line_draw(Virtual *vwk, long x1, long y1, long x2, long y2,
                        long pattern, long colour, long mode)
 {
+    PRINTF(("c_line_draw()\n"));
     Workstation *wk;
     PIXEL *addr, *addr_fast;
     unsigned long foreground, background;

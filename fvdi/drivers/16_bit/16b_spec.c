@@ -41,7 +41,7 @@ long CDECL (*read_pixel_r)(Virtual *vwk, MFDB *mfdb, long x, long y) = c_read_pi
 
 long CDECL (*line_draw_r)(Virtual *vwk, long x1, long y1, long x2, long y2, long pattern, long colour, long mode) = 0;//c_line_draw;
 long CDECL (*expand_area_r)(Virtual *vwk, MFDB *src, long src_x, long src_y, MFDB *dst, long dst_x, long dst_y, long w, long h, long operation, long colour) = 0;//c_expand_area;
-long CDECL (*fill_area_r)(Virtual *vwk, long x, long y, long w, long h, short *pattern, long colour, long mode, long interior_style) = 0;//c_fill_area;
+long CDECL (*fill_area_r)(Virtual *vwk, long x, long y, long w, long h, short *pattern, long colour, long mode, long interior_style) = c_fill_area;
 long CDECL (*fill_poly_r)(Virtual *vwk, short points[], long n, short index[], long moves, short *pattern, long colour, long mode, long interior_style) = 0;
 long CDECL (*blit_area_r)(Virtual *vwk, MFDB *src, long src_x, long src_y, MFDB *dst, long dst_x, long dst_y, long w, long h, long operation) = 0;//c_blit_area;
 long CDECL (*text_area_r)(Virtual *vwk, short *text, long length, long dst_x, long dst_y, short *offsets) = 0;
@@ -287,6 +287,9 @@ long CDECL initialize(Virtual *vwk)
     Colour *old_palette_colours;
     short *pp;
 
+    PRINTF(("initialise(%d)\r\n", vwk->standard_handle ));
+
+    
 #if 0
     debug = access->funcs.misc(0, 1, 0);
 #endif
@@ -327,11 +330,15 @@ long CDECL initialize(Virtual *vwk)
             wk->screen.palette.colours = old_palette_colours;
     }
     pp = (short *)c_set_colours;
-    if (*pp != 0x4e75)  /* Look for C... */
+    if (*pp != 0x4e75)  /* Look for C... */ {
+        PRINTF(("c_initialise_palette()\r\n"));        
         c_initialize_palette(vwk, 0, wk->screen.palette.size, default_vdi_colors, wk->screen.palette.colours);
-    else
+        // this is equal to set_colours_r which is equal to c_set_colours...
+    }
+    else {
+        PRINTF(("initialise_palette()\r\n"));
         initialize_palette(vwk, 0, wk->screen.palette.size, default_vdi_colors, wk->screen.palette.colours);
-
+    }
 #if 0
     if ((old_palette_size = wk->screen.palette.size) != 256)
     {
@@ -452,15 +459,14 @@ Virtual *CDECL opnwk(Virtual *vwk)
     wk->screen.mfdb.address = (short *) screen_address;
 
 
-//    wk->screen.mfdb.wdwidth = (wk->screen.mfdb.width + 15) / 16;
-//    wk->screen.wrap = wk->screen.mfdb.width * (wk->screen.mfdb.bitplanes / 8);
     wk->screen.mfdb.width = 640;
     wk->screen.mfdb.height = 480;
     wk->screen.wrap = 640;
-    wk->screen.mfdb.bitplanes = 8;
-
+    wk->screen.mfdb.standard = 0;
     wk->screen.coordinates.max_x = wk->screen.mfdb.width - 1;
     wk->screen.coordinates.max_y = wk->screen.mfdb.height - 1;
+
+    wk->screen.mfdb.bitplanes = 8;
 
     wk->screen.look_up_table = 0;           /* Was 1 (???)  Shouldn't be needed (graphics_mode) */
     wk->screen.mfdb.standard = 0;
@@ -474,11 +480,13 @@ Virtual *CDECL opnwk(Virtual *vwk)
         wk->screen.pixel.height = (pixel.height * 1000L) / wk->screen.mfdb.height;
     else                                    /*   or fixed DPI (negative) */
         wk->screen.pixel.height = 25400 / -pixel.height;
-
+#endif
     wk->mouse.position.x = ((wk->screen.coordinates.max_x - wk->screen.coordinates.min_x + 1) >> 1) + wk->screen.coordinates.min_x;
     wk->mouse.position.y = ((wk->screen.coordinates.max_y - wk->screen.coordinates.min_y + 1) >> 1) + wk->screen.coordinates.min_y;
     
-#endif
+//    wk->mouse.colour.foreground = 0x00;
+//    wk->mouse.colour.background = 0xFF;
+
     PRINTF(("%d x %d x %d screen at 0x%lx\r\n(Press return to continue)\r\n", wk->screen.mfdb.width, wk->screen.mfdb.height,
             wk->screen.mfdb.bitplanes, (long) wk->screen.mfdb.address));
 

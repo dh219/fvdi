@@ -16,6 +16,9 @@
 #include "../bitplane/bitplane.h"
 #include "relocate.h"
 
+#define PIXEL       unsigned char
+#define PIXEL_SIZE  sizeof(PIXEL)
+
 #define NOVA 0		/* 1 - byte swap 16 bit colour value (NOVA etc) */
 
 #define red_bits   3	/* 5 for all normal 16 bit hardware */
@@ -29,11 +32,15 @@ long CDECL c_get_colour(Virtual *vwk, long colour)
     Colour *local_palette, *global_palette;
     Colour *fore_pal, *back_pal;
     unsigned short foreground, background;
-    unsigned short *realp;
+    PIXEL *realp;
+    unsigned long bgcomponent;
+    unsigned long fgcomponent;
 
     local_palette = vwk->palette;
-    if (local_palette && !((long)local_palette & 1))    /* Complete local palette? */
+    if (local_palette && !((long)local_palette & 1)) {   /* Complete local palette? */
         fore_pal = back_pal = local_palette;
+//        PRINTF(("local_palette\r\n"));
+    }
     else {                      /* Global or only negative local */
         local_palette = (Colour *)((long)local_palette & 0xfffffffeL);
         global_palette = vwk->real_address->screen.palette.colours;
@@ -45,13 +52,25 @@ long CDECL c_get_colour(Virtual *vwk, long colour)
             back_pal = local_palette;
         else
             back_pal = global_palette;
+//        PRINTF(("colours: %p: fore_pal/back_pal: %p/%p\r\n", global_palette, fore_pal, back_pal));
     }
 
-    realp = (unsigned short *)&fore_pal[(short)colour].real;
+    // palette format is concatenation of ( RGB vdi, RGB hw, long real )
+    // where RGB is short r, short, g, short b
+    // the RGB goes 0-1000 ( 0x3e8 )
+    realp = (PIXEL*)&fore_pal[(short)colour].real;
     foreground = *realp;
-    realp = (unsigned short *)&back_pal[colour >> 16].real;
+//    PRINTF(( "pal: %p, pal[col]: %p, pal[col].real: %d\r\n", fore_pal, (unsigned short *)&fore_pal[(short)colour], foreground )) ;
+    realp = (PIXEL*)&back_pal[colour >> 16].real;
     background = *realp;
-    return ((unsigned long)background << 16) | (unsigned long)foreground;
+    
+    bgcomponent = ((unsigned long)background << 16);
+    fgcomponent = (unsigned long)foreground;
+   
+//    PRINTF(("c_get_colour(%lx): %lx (%lx/%lx)\r\n", colour, bgcomponent | fgcomponent, bgcomponent, fgcomponent));
+//    PRINTF(( "[%d] c_get_col(%d) %x/%x\r\n", vwk->standard_handle, (int)colour, foreground, background ));
+
+    return bgcomponent | fgcomponent;
 }
 
 
@@ -59,7 +78,7 @@ void CDECL c_get_colours(Virtual *vwk, long colour, unsigned long *foreground, u
 {
     Colour *local_palette, *global_palette;
     Colour *fore_pal, *back_pal;
-    unsigned short *realp;
+    PIXEL *realp;
 
     local_palette = vwk->palette;
     if (local_palette && !((long)local_palette & 1))    /* Complete local palette? */
@@ -77,9 +96,9 @@ void CDECL c_get_colours(Virtual *vwk, long colour, unsigned long *foreground, u
             back_pal = global_palette;
     }
 
-    realp = (unsigned short *)&fore_pal[(short)colour].real;
+    realp = (PIXEL*)&fore_pal[(short)colour].real;
     *foreground = *realp;
-    realp = (unsigned short *)&back_pal[colour >> 16].real;
+    realp = (PIXEL*)&back_pal[colour >> 16].real;
     *background = *realp;
 }
 
@@ -90,10 +109,14 @@ void CDECL c_set_colours(Virtual *vwk, long start, long entries, unsigned short 
     unsigned short component;
     unsigned long tc_word;
     int i;
-    short *realp;
+    //short *realp;
+    PIXEL *realp;
 
+//    PRINTF(( "c_set_colours( %d, %ld, %ld, %p, %p)\r\n", vwk->standard_handle, start, entries, requested, palette ));
+    
     (void) vwk;
     if ((long)requested & 1) {          /* New entries? */
+//        PRINTF(( "c_set_colours(): new entries\r\n"));
         requested = (unsigned short *)((long)requested & 0xfffffffeL);
         for(i = 0; i < entries; i++) {
             requested++;                /* First word is reserved */
@@ -117,10 +140,11 @@ void CDECL c_set_colours(Virtual *vwk, long start, long entries, unsigned short 
             tc_word = ((tc_word & 0x000000ff) << 24) | ((tc_word & 0x0000ff00) <<  8) |
                       ((tc_word & 0x00ff0000) >>  8) | ((tc_word & 0xff000000) >> 24);
 #endif
-            realp = (short *)&palette[start + i].real;
+            realp = (PIXEL*)&palette[start + i].real;
             *realp = tc_word;
         }
     } else {
+//        PRINTF(( "c_set_colours(): not deemed new entries\r\n"));
         for(i = 0; i < entries; i++) {
             component = *requested++;
             palette[start + i].vdi.red = component;
@@ -141,8 +165,12 @@ void CDECL c_set_colours(Virtual *vwk, long start, long entries, unsigned short 
 #if NOVA
             tc_word = (tc_word << 8) | (tc_word >> 8);
 #endif
-            realp = (short *)&palette[start + i].real;
+            realp = (PIXEL*)&palette[start + i].real;
             *realp = tc_word;
+
+//            if( i < 2 ) {
+//                PRINTF(( "%d: %d %d %d = %lx %x (%p)\r\n", i, palette[start + i].vdi.red, palette[start + i].vdi.green, palette[start + i].vdi.blue, tc_word, (*realp), realp ));
+//            }
         }
     }
 }

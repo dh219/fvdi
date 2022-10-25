@@ -14,13 +14,13 @@
 #include "driver.h"
 #include "../bitplane/bitplane.h"
 
-#define PIXEL       char
+#define PIXEL       unsigned char
 #define PIXEL_SIZE  sizeof(PIXEL)
 
 static unsigned long mouse_save_state = 0;
 static long mouse_old_colours = 0;
-static PIXEL mouse_foreground = 0xff;
-static PIXEL mouse_background = 0;
+static PIXEL mouse_foreground = 0x0;
+static PIXEL mouse_background = 0xff;
 
 static unsigned short mouse_data[16 * 2] = {
     0xffff, 0x0000, 0x7ffe, 0x3ffc, 0x3ffc, 0x1ff8, 0x1ff8, 0x0ff0,
@@ -29,6 +29,18 @@ static unsigned short mouse_data[16 * 2] = {
 static PIXEL mouse_saved[16 * 16];
 
 
+void dumppalette(Workstation *wk) {
+    int i, j;
+    PIXEL* realp;
+    PRINTF(("Palette.colours: %p\r\n", wk->screen.palette.colours ));
+    for( i = 0 ; i < 256 ; i+=16 ) {
+        for( j = 0 ; j < 16 ; j++ ) {
+            realp = (PIXEL*)&(wk->screen.palette.colours[i+j].real);
+            PRINTF(( "%2.2x  ", *realp ));
+        }
+        PRINTF(("\r\n"));
+    }
+}
 
 static void set_mouse_shape(Mouse *mouse, unsigned short *masks)
 {
@@ -151,10 +163,18 @@ static void draw_mouse(Workstation *wk, short x, short y)
             do
             {
                 *save_w++ = *dst;
+                
                 if (fg & 0x8000)
                     *dst = mouse_foreground;
                 else if (bg & 0x8000)
                     *dst = mouse_background;
+
+/*
+                if (fg & 0x8000)
+                    *dst = 0x00;
+                else if (bg & 0x8000)
+                    *dst = 0xFF;
+*/
                 dst++;
                 bg <<= 1;
                 fg <<= 1;
@@ -178,8 +198,9 @@ long CDECL c_mouse_draw(Workstation *wk, long x, long y, Mouse *mouse)
     if (mouseparm > 7)
     {                                   /* New mouse shape */
         long *pp = (long *)&wk->mouse.colour;
+//        PRINTF(("Mouse colour: %8.8lx\r\n", *pp ));
 
-        pp = (long *)&wk->mouse.colour;
+        //pp = (long *)&wk->mouse.colour;
         if (*pp != mouse_old_colours)
         {
             Colour *global_palette;
@@ -189,9 +210,17 @@ long CDECL c_mouse_draw(Workstation *wk, long x, long y, Mouse *mouse)
             /* c_get_colours(wk, *pp, &mouse_foreground, &mouse_background); */
             global_palette = wk->screen.palette.colours;
             realp = (PIXEL *)&global_palette[wk->mouse.colour.foreground].real;
+            PRINTF(("mouse.colour.foreground: %d\r\n", wk->mouse.colour.foreground ));
+            PRINTF(("palette[mouse.colour.foreground].real: %x\r\n", *realp ));
             mouse_foreground = *realp;
             realp = (PIXEL *)&global_palette[wk->mouse.colour.background].real;
             mouse_background = *realp;
+//            mouse_background = (PIXEL)wk->screen.palette.colours[wk->mouse.colour.background].real;
+            PRINTF(("mouse.colour.background: %d\r\n", wk->mouse.colour.background ));
+            PRINTF(("palette[mouse.colour.background].real: %x\r\n", *realp ));
+
+            PRINTF(("Mouse fore/back: %x/%x\r\n", mouse_foreground, mouse_background ));
+            dumppalette(wk);
         }
 
         if (!fix_shape)

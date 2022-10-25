@@ -15,11 +15,10 @@
 #include "driver.h"
 #include "../bitplane/bitplane.h"
 
-#define PIXEL		char
+#define PIXEL		unsigned char
 #define PIXEL_SIZE	sizeof(PIXEL)
 #define PIXEL_32    long
 
-#ifdef DAVID
 
 /*
  * Make it as easy as possible for the C compiler.
@@ -284,7 +283,7 @@ static void fill_replace(PIXEL *addr, PIXEL *addr_fast, int line_add, short *pat
     (void) addr_fast;
     i = y;
     h = y + h;
-    x = 1 << (15 - (x & 0x000f));
+    x = 1 << (15 - (x & 0x000f)); // ?
 
     /* Tell gcc that this cannot happen (already checked in c_fill_area() below) */
     if (w <= 0 || h <= 0)
@@ -303,6 +302,7 @@ static void fill_replace(PIXEL *addr, PIXEL *addr_fast, int line_add, short *pat
             }
             break;
         default:
+//            PRINTF(("fill_replace(): pattern '%x'\n", pattern));
             mask = x;
             for(j = w - 1; j >= 0; j--) {
                 if (pattern_word & mask) {
@@ -330,6 +330,7 @@ static void fill_replace(PIXEL *addr, PIXEL *addr_fast, int line_add, short *pat
 #endif
         addr += line_add;
     }
+    return 1;
 }
 
 static void fill_transparent(PIXEL *addr, PIXEL *addr_fast, int line_add, short *pattern, int x, int y, int w, int h, PIXEL foreground, PIXEL background)
@@ -543,9 +544,10 @@ long CDECL c_fill_area(Virtual *vwk, long x, long y, long w, long h,
 
     wk = vwk->real_address;
 
-    pos = (short)y * (long)wk->screen.wrap + x * 2;
+    // valid for 8 bit only
+    pos = (short)y * (long)wk->screen.wrap + x;
     addr = wk->screen.mfdb.address;
-    line_add = (wk->screen.wrap - w * 2) >> 1;
+    line_add = (wk->screen.wrap - w);
 
 #ifdef BOTH
     if ((addr_fast = wk->screen.shadow.address) != 0) {
@@ -575,12 +577,15 @@ long CDECL c_fill_area(Virtual *vwk, long x, long y, long w, long h,
             fill_replace(addr, addr_fast, line_add, pattern, x, y, w, h, foreground, background);
             break;
         case 2:             /* Transparent */
+            PRINTF(("c_fill_area(): fill_transparent()\n"));
             fill_transparent(addr, addr_fast, line_add, pattern, x, y, w, h, foreground, background);
             break;
         case 3:             /* XOR */
             fill_xor(addr, addr_fast, line_add, pattern, x, y, w, h, foreground, background);
             break;
         case 4:             /* Reverse transparent */
+            PRINTF(("c_fill_area(): fill_revtransp() bypassed\n"));
+            return 0;
             fill_revtransp(addr, addr_fast, line_add, pattern, x, y, w, h, foreground, background);
             break;
         }
@@ -588,4 +593,3 @@ long CDECL c_fill_area(Virtual *vwk, long x, long y, long w, long h,
     return 1;       /* Return as completed */
 }
 
-#endif

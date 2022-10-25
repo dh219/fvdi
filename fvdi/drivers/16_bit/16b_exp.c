@@ -15,7 +15,7 @@
 #include "driver.h"
 #include "../bitplane/bitplane.h"
 
-#define PIXEL		char
+#define PIXEL		unsigned char
 #define PIXEL_SIZE	sizeof(PIXEL)
 
 #ifdef DAVID
