@@ -19,7 +19,6 @@
 #define PIXEL_SIZE	sizeof(PIXEL)
 #define PIXEL_32    long
 
-#ifndef DAVID
 
 /*
  * Make it as easy as possible for the C compiler.
@@ -708,10 +707,48 @@ static void line_revtransp_p(PIXEL *addr, PIXEL *addr_fast, long pattern, int co
 #define BOTH
 #endif
 
+void draw_horizvert( short orient, PIXEL *addr, long wrap, long axis, long start, long end, long colour ) {
+    
+    PIXEL *startpos;
+    PIXEL *endpos;
+    
+//    PRINTF(("draw_horizvert( %d, %p, %ld, %ld, %ld, %ld, %lx (%x)\n",
+//        orient, addr, wrap, axis, start, end, colour, (PIXEL)colour ));
+    if( orient == 0 ) { // horiz
+        if( end < start ) {
+            short tmp;
+            tmp = start;
+            start = end;
+            end = tmp;
+        }
+        startpos = addr + ( wrap * axis ) + start;
+        endpos = addr + ( wrap * axis ) + end;
+        while( startpos < endpos ) {
+            *startpos++ = (PIXEL)colour;
+        }
+    }
+    else {
+        if( end < start ) {
+            short tmp;
+            tmp = start;
+            start = end;
+            end = tmp;
+        }
+        startpos = addr + ( wrap * start ) + axis;
+        endpos = addr + ( wrap * end ) + axis;
+        while( startpos < endpos ) {
+            *startpos = (PIXEL)colour;
+            startpos += wrap;
+        }
+    }
+}
+
 long CDECL c_line_draw(Virtual *vwk, long x1, long y1, long x2, long y2,
                        long pattern, long colour, long mode)
 {
-    PRINTF(("c_line_draw()\n"));
+//    PRINTF(("c_line_draw(%d, [%ld,%ld], [%ld,%ld], %lx, %ld, %lx)\n",
+//        vwk->standard_handle, x1, y1, x2, y2, pattern, colour, mode ));
+
     Workstation *wk;
     PIXEL *addr, *addr_fast;
     unsigned long foreground, background;
@@ -727,17 +764,29 @@ long CDECL c_line_draw(Virtual *vwk, long x1, long y1, long x2, long y2,
         return -1;          /* Don't know about anything yet */
     }
 
-    if (!clip_line(vwk, &x1, &y1, &x2, &y2))
-        return 1;
-
+    wk = vwk->real_address;
     c_get_colours(vwk, colour, &foreground, &background);
 
-    wk = vwk->real_address;
+    /* david */
+    if( x1 == x2 && pattern == 0xFFFF ) { // vertical line 
+        draw_horizvert( 1, (void*)wk->screen.mfdb.address, (long)wk->screen.wrap, x1, y1, y2, foreground );
+        return 1;
+    }
+    else if( y1 == y2 && pattern == 0xFFFF ) { // horizontal line
+        draw_horizvert( 0, (void*)wk->screen.mfdb.address, (long)wk->screen.wrap, y1, x1, x2, (PIXEL)foreground );
+        return 1;
+    }
+
+    return 0;
+
+    if (!clip_line(vwk, &x1, &y1, &x2, &y2))
+        return 1;
 
     pos = (short)y1 * (long)wk->screen.wrap + x1 * 2;
     addr = wk->screen.mfdb.address;
     line_add = wk->screen.wrap >> 1;
 
+    
 
     x_step = 1;
     y_step = line_add;
@@ -811,19 +860,26 @@ long CDECL c_line_draw(Virtual *vwk, long x1, long y1, long x2, long y2,
         if ((pattern & 0xffff) == 0xffff) {
             switch (mode) {
             case 1:             /* Replace */
+//                PRINTF(("line_replace(%p, %p, %d, %d, %d, %d, %d, %d %d %d)\n",
+//                    addr, addr_fast, count, d, incrE, incrNE, one_step, both_step, foreground, background ));
                 line_replace(addr, addr_fast, count, d, incrE, incrNE, one_step, both_step, foreground, background);
                 break;
             case 2:             /* Transparent */
+                return 0;
                 line_transparent(addr, addr_fast, count, d, incrE, incrNE, one_step, both_step, foreground, background);
                 break;
             case 3:             /* XOR */
+                return 0;
                 line_xor(addr, addr_fast, count, d, incrE, incrNE, one_step, both_step, foreground, background);
                 break;
             case 4:             /* Reverse transparent */
+                return 0;
                 line_revtransp(addr, addr_fast, count, d, incrE, incrNE, one_step, both_step, foreground, background);
                 break;
             }
         } else {
+//            PRINTF(("line with pattern skipped\n"));
+            return 0; // skip
             switch (mode) {
             case 1:             /* Replace */
                 line_replace_p(addr, addr_fast, pattern, count, d, incrE, incrNE, one_step, both_step, foreground, background);
@@ -843,4 +899,3 @@ long CDECL c_line_draw(Virtual *vwk, long x1, long y1, long x2, long y2,
     return 1;       /* Return as completed */
 }
 
-#endif
