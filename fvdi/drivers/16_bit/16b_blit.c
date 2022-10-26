@@ -19,8 +19,6 @@
 #define PIXEL_SIZE	sizeof(PIXEL)
 #define PIXEL_32    long
 
-#ifndef DAVID
-
 #ifdef FVDI_DEBUG
 static void debug_out(const char *text1, int w, int old_w, int h, int src_x, int src_y, int dst_x, int dst_y)
 {
@@ -610,13 +608,27 @@ s_pan_backwards(PIXEL *src_addr, int src_line_add,
 #endif
 #undef BOTH
 
+static void blit_copy(PIXEL *src_addr, int src_line_add,
+    PIXEL *dst_addr, PIXEL *dst_addr_fast, int dst_line_add,
+    short int w, short int h)
+{
+    src_line_add += w; // because memcpy doesn't alter the src and dst pointers
+    dst_line_add += w;
+    while( h > 0 ) {
+        memcpy( dst_addr, src_addr, w ); // works because sizeof(PIXEL) == 1        
+        src_addr += src_line_add;
+        dst_addr += dst_line_add;
+        h--;
+    }
+}
+
 /*
  * The functions below are exact copies of those above.
  * The '#undef BOTH' makes sure that this works as it should
  * when no shadow buffer is available
  */
 
-static void blit_copy(PIXEL *src_addr, int src_line_add,
+static void asm_blit_copy(PIXEL *src_addr, int src_line_add,
     PIXEL *dst_addr, PIXEL *dst_addr_fast, int dst_line_add,
     short int w, short int h)
 {
@@ -1114,7 +1126,8 @@ c_blit_area(Virtual *vwk, MFDB *src, long src_x, long src_y,
             MFDB *dst, long dst_x, long dst_y,
             long w, long h, long operation)
 {
-    PRINTF(("c_blit_area()\n"));
+//    PRINTF(("c_blit_area( src/dst: %p/%p s:(%ld, %ld), d:(%ld, %ld), wxh:(%ld, %ld), op:%lx )\n",
+//        src, dst, src_x,src_y,dst_x,dst_y,w,h, operation ));
     
     Workstation *wk;
     PIXEL *src_addr, *dst_addr, *dst_addr_fast;
@@ -1160,11 +1173,12 @@ c_blit_area(Virtual *vwk, MFDB *src, long src_x, long src_y,
 
     src_addr += src_pos / PIXEL_SIZE;
     dst_addr += dst_pos / PIXEL_SIZE;
-    src_line_add /= PIXEL_SIZE;     /* Change into pixel count */
+    src_line_add /= PIXEL_SIZE;
     dst_line_add /= PIXEL_SIZE;
 
     dst_addr_fast = wk->screen.shadow.address;  /* May not really be to screen at all, but... */
 
+    
 #ifdef FVDI_DEBUG
     if (debug > 1) {
         debug_out("Blitting: ", w, -1, h, src_x, src_y, dst_x, dst_y);
@@ -1181,12 +1195,18 @@ c_blit_area(Virtual *vwk, MFDB *src, long src_x, long src_y,
             dst_line_add += 2 * w;
             switch(operation) {
             case 3:
+                PRINTF(("pan_backwards_copy() skipped\n"));
+                return 0;   
                 pan_backwards_copy(src_addr, src_line_add, dst_addr, 0, dst_line_add, w, h);
                 break;
             case 7:
+                PRINTF(("pan_backwards_or() skipped\n"));
+                return 0;   
                 pan_backwards_or(src_addr, src_line_add, dst_addr, 0, dst_line_add, w, h);
                 break;
             default:
+                PRINTF(("pan_backwards() skipped\n"));
+                return 0;   
                 pan_backwards(src_addr, src_line_add, dst_addr, 0, dst_line_add, w, h, operation);
                 break;
             }
@@ -1196,9 +1216,13 @@ c_blit_area(Virtual *vwk, MFDB *src, long src_x, long src_y,
                 blit_copy(src_addr, src_line_add, dst_addr, 0, dst_line_add, w, h);
                 break;
             case 7:
+                PRINTF(("blit_or() skipped\n"));
+                return 0;   
                 blit_or(src_addr, src_line_add, dst_addr, 0, dst_line_add, w, h);
                 break;
             default:
+                PRINTF(("blit_16b() skipped\n"));
+                return 0;   
                 blit_16b(src_addr, src_line_add, dst_addr, 0, dst_line_add, w, h, operation);
                 break;
             }
@@ -1244,4 +1268,3 @@ c_blit_area(Virtual *vwk, MFDB *src, long src_x, long src_y,
 
     return 1;   /* Return as completed */
 }
-#endif

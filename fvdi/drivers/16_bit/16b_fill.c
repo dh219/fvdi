@@ -577,7 +577,6 @@ long CDECL c_fill_area(Virtual *vwk, long x, long y, long w, long h,
             fill_replace(addr, addr_fast, line_add, pattern, x, y, w, h, foreground, background);
             break;
         case 2:             /* Transparent */
-            PRINTF(("c_fill_area(): fill_transparent()\n"));
             fill_transparent(addr, addr_fast, line_add, pattern, x, y, w, h, foreground, background);
             break;
         case 3:             /* XOR */
