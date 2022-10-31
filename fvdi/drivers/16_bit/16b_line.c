@@ -746,9 +746,6 @@ void draw_horizvert( short orient, PIXEL *addr, long wrap, long axis, long start
 long CDECL c_line_draw(Virtual *vwk, long x1, long y1, long x2, long y2,
                        long pattern, long colour, long mode)
 {
-//    PRINTF(("c_line_draw(%d, [%ld,%ld], [%ld,%ld], %lx, %ld, %lx)\n",
-//        vwk->standard_handle, x1, y1, x2, y2, pattern, colour, mode ));
-
     Workstation *wk;
     PIXEL *addr, *addr_fast;
     unsigned long foreground, background;
@@ -760,27 +757,33 @@ long CDECL c_line_draw(Virtual *vwk, long x1, long y1, long x2, long y2,
     int d, count;
     int incrE, incrNE;
 
-    if ((long)vwk & 1) {
-        return -1;          /* Don't know about anything yet */
-    }
+//    PRINTF(("c_line_draw(%lx, [%ld,%ld], [%ld,%ld], %lx, %ld, %lx)\n",
+//        (long)vwk, x1, y1, x2, y2, pattern, colour, mode ));
 
+
+    if ((long)vwk & 1) {
+        return 0;//-1;          /* Don't know about anything yet */
+    }
+    
     wk = vwk->real_address;
     c_get_colours(vwk, colour, &foreground, &background);
 
+    if (!clip_line(vwk, &x1, &y1, &x2, &y2))
+        return 1;
+
+    
     /* david */
-    if( x1 == x2 && pattern == 0xFFFF ) { // vertical line 
+    if( x1 == x2 && (pattern&0xFFFF) == 0xFFFF ) { // vertical line 
         draw_horizvert( 1, (void*)wk->screen.mfdb.address, (long)wk->screen.wrap, x1, y1, y2, foreground );
         return 1;
     }
-    else if( y1 == y2 && pattern == 0xFFFF ) { // horizontal line
-        draw_horizvert( 0, (void*)wk->screen.mfdb.address, (long)wk->screen.wrap, y1, x1, x2, (PIXEL)foreground );
+    else if( y1 == y2 && (pattern&0xFFFF) == 0xFFFF ) { // horizontal line
+        draw_horizvert( 0, (void*)wk->screen.mfdb.address, (long)wk->screen.wrap, y1, x1, x2, foreground );
         return 1;
     }
-
+    PRINTF(("Skipping line draw\n"));
     return 0;
 
-    if (!clip_line(vwk, &x1, &y1, &x2, &y2))
-        return 1;
 
     pos = (short)y1 * (long)wk->screen.wrap + x1 * 2;
     addr = wk->screen.mfdb.address;
