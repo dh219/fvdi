@@ -781,7 +781,7 @@ long CDECL c_line_draw(Virtual *vwk, long x1, long y1, long x2, long y2,
         draw_horizvert( 0, (void*)wk->screen.mfdb.address, (long)wk->screen.wrap, y1, x1, x2, foreground );
         return 1;
     }
-    PRINTF(("Skipping line draw\n"));
+//    PRINTF(("Skipping line draw\n"));
     return 0;
 
 

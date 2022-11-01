@@ -608,10 +608,13 @@ s_pan_backwards(PIXEL *src_addr, int src_line_add,
 #endif
 #undef BOTH
 
+#define BLITMEMCPY 1
+
 static void blit_copy(PIXEL *src_addr, int src_line_add,
     PIXEL *dst_addr, PIXEL *dst_addr_fast, int dst_line_add,
     short int w, short int h)
 {
+#ifdef BLITMEMCPY
     src_line_add += w; // because memcpy doesn't alter the src and dst pointers
     dst_line_add += w;
     while( h > 0 ) {
@@ -620,6 +623,16 @@ static void blit_copy(PIXEL *src_addr, int src_line_add,
         dst_addr += dst_line_add;
         h--;
     }
+#else
+    int i = 0;
+    while( h > 0 ) {
+        for( i = 0 ; i < w ; i++ )
+            *(dst_addr++) = *(src_addr++);
+        src_addr += src_line_add;
+        dst_addr += dst_line_add;
+        h--;
+    }
+#endif
 }
 
 /*
@@ -627,8 +640,8 @@ static void blit_copy(PIXEL *src_addr, int src_line_add,
  * The '#undef BOTH' makes sure that this works as it should
  * when no shadow buffer is available
  */
-
-static void asm_blit_copy(PIXEL *src_addr, int src_line_add,
+#if 0
+static void blit_copy(PIXEL *src_addr, int src_line_add,
     PIXEL *dst_addr, PIXEL *dst_addr_fast, int dst_line_add,
     short int w, short int h)
 {
@@ -713,8 +726,10 @@ static void asm_blit_copy(PIXEL *src_addr, int src_line_add,
 #undef COPY_LOOP
 #undef NEXTLINE
 }
+#endif
 
 
+#if 0
 static void blit_or(PIXEL *src_addr, int src_line_add,
         PIXEL *dst_addr, PIXEL *dst_addr_fast, int dst_line_add,
         short int w, short int h)
@@ -804,7 +819,22 @@ static void blit_or(PIXEL *src_addr, int src_line_add,
 #undef COPY_LOOP
 #undef NEXTLINE
 }
+#endif
 
+static void blit_or(PIXEL *src_addr, int src_line_add,
+        PIXEL *dst_addr, PIXEL *dst_addr_fast, int dst_line_add,
+        short int w, short int h)
+{
+    int i;
+    while( h > 0 ) {
+        for( i = 0 ; i < w ; i++ ) {
+            *(dst_addr++) = *(src_addr++) | *dst_addr;
+        }
+        src_addr += src_line_add;
+        dst_addr += dst_line_add;
+        h--;
+    }
+}
 
 static void blit_16b(PIXEL *src_addr, int src_line_add,
      PIXEL *dst_addr, PIXEL *dst_addr_fast, int dst_line_add,
@@ -1216,12 +1246,10 @@ c_blit_area(Virtual *vwk, MFDB *src, long src_x, long src_y,
                 blit_copy(src_addr, src_line_add, dst_addr, 0, dst_line_add, w, h);
                 break;
             case 7:
-                PRINTF(("blit_or() skipped\n"));
-                return 0;   
                 blit_or(src_addr, src_line_add, dst_addr, 0, dst_line_add, w, h);
                 break;
             default:
-                PRINTF(("blit_16b() skipped\n"));
+                PRINTF(("blit_16b() skipped [op=%d]\n", operation));
                 return 0;   
                 blit_16b(src_addr, src_line_add, dst_addr, 0, dst_line_add, w, h, operation);
                 break;
