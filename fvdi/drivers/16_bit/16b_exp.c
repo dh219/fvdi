@@ -194,6 +194,9 @@ static void replace(short *src_addr, int src_line_add, PIXEL *dst_addr, PIXEL *d
     int i, j;
     unsigned int expand_word, mask;
 
+    PRINTF(("replace( %p, %d, %p, %p, %d, x:%d, %dx%d, %x %x\n",
+        src_addr, src_line_add, dst_addr, dst_addr_fast, dst_line_add, x, w, h, foreground, background ));
+    
     (void) dst_addr_fast;
     x = 1 << (15 - (x & 0x000f));
 
@@ -230,6 +233,9 @@ static void transparent(short *src_addr, int src_line_add, PIXEL *dst_addr, PIXE
     int i, j;
     unsigned int expand_word, mask;
 
+    PRINTF(("transparent( %p, %d, %p, %d, x:%d, %dx%d, %x %x\n",
+        src_addr, src_line_add, dst_addr, dst_line_add, x, w, h, foreground, background ));
+    
     (void) dst_addr_fast;
     (void) background;
     x = 1 << (15 - (x & 0x000f));
@@ -356,11 +362,15 @@ long CDECL c_expand_area(Virtual *vwk, MFDB *src, long src_x, long src_y, MFDB *
     unsigned long src_pos, dst_pos;
     int to_screen;
 
+    PRINTF(("c_expand_area(%d, %p, (%ld,%ld), %p, (%ld,%ld), (%ldx%ld), %lx, %lx/%lx (%8.8lx))\n",
+        vwk->standard_handle, src, src_x, src_y,
+        dst, dst_x, dst_y, w, h, operation, colour & 0xffff, colour >> 16, colour ));
+    
     wk = vwk->real_address;
 
     c_get_colours(vwk, colour, &foreground, &background);
 
-    src_wrap = (long)src->wdwidth * 2;      /* Always monochrome */
+    src_wrap = (long)src->wdwidth * 2;      /* Always monochrome */ // src width in words *2 for bytes
     src_addr = src->address;
     src_pos = (short)src_y * (long)src_wrap + (src_x >> 4) * 2;
     src_line_add = src_wrap - (((src_x + w) >> 4) - (src_x >> 4) + 1) * 2;

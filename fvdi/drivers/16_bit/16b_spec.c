@@ -48,7 +48,7 @@ long CDECL (*text_area_r)(Virtual *vwk, short *text, long length, long dst_x, lo
 long CDECL (*mouse_draw_r)(Workstation *wk, long x, long y, Mouse *mouse) = c_mouse_draw;
 
 long CDECL (*get_colour_r)(Virtual *vwk, long colour) = c_get_colour;
-void CDECL (*get_colours_r)(Virtual *vwk, long colour, unsigned long *foreground, unsigned long *background) = 0;
+void CDECL (*get_colours_r)(Virtual *vwk, long colour, unsigned long *foreground, unsigned long *background) = c_get_colours;
 void CDECL (*set_colours_r)(Virtual *vwk, long start, long entries, unsigned short *requested, Colour palette[]) = c_set_colours;
 
 long wk_extend = 0;
@@ -288,7 +288,6 @@ long CDECL initialize(Virtual *vwk)
     short *pp;
 
     PRINTF(("initialise(%d)\r\n", vwk->standard_handle ));
-
     
 #if 0
     debug = access->funcs.misc(0, 1, 0);
@@ -444,6 +443,12 @@ Virtual *CDECL opnwk(Virtual *vwk)
 {
     unsigned long screen_address = 0xC00000;
     Workstation *wk;
+    unsigned short *linea;
+    Fontheader *font9;
+    Fontheader *font10;
+    
+    short dummy;
+    
     (void) vwk;
 
     vwk = me->default_vwk;  /* This is what we're interested in */
@@ -469,7 +474,6 @@ Virtual *CDECL opnwk(Virtual *vwk)
     wk->screen.mfdb.bitplanes = 8;
 
     wk->screen.look_up_table = 0;           /* Was 1 (???)  Shouldn't be needed (graphics_mode) */
-    wk->screen.mfdb.standard = 0;
 #if 0
     if (pixel.width > 0)            /* Starts out as screen width */
         wk->screen.pixel.width = (pixel.width * 1000L) / wk->screen.mfdb.width;
