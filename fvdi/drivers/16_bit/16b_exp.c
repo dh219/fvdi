@@ -18,6 +18,7 @@
 #define PIXEL		unsigned char
 #define PIXEL_SIZE	sizeof(PIXEL)
 
+#define PRINTF
 
 /*
  * Make it as easy as possible for the C compiler.

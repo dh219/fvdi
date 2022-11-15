@@ -24,14 +24,21 @@ static char const g_16[] = { 6,  5,  6,  7,  8,  9, 10 };
 static char const b_16[] = { 5,  0,  1,  2,  3,  4 };
 static char const none[] = { 0 };
 #endif
+
 static char const r_8[] = { 5, 6, 7 };
 static char const g_8[] = { 2,  3,  4 };
 static char const b_8[] = { 0,  1 };
 static char const none[] = { 0 };
 
-
+/*
+static char const red[] = { 6 };
+static char const green[] = { 6 };
+static char const blue[] = { 6 };
+static char const none[] = { 0 };
+*/
 static Mode const mode[1] = {
     { 8, CHUNKY | CHECK_PREVIOUS | TRUE_COLOUR, { r_8, g_8, b_8, none, none, none }, 0, 2, 2, 1 }
+//    { 8, CHUNKY | CHECK_PREVIOUS, { red, green, blue, none, none, none }, 0, 0, 1, 1 }
 };
 
 char driver_name[] = "Falcon TC 2001-03-24 (shadow)";
